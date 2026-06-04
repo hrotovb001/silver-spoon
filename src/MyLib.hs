@@ -1,18 +1,14 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
-module MyLib (someFunc) where
+module MyLib (Node(..), NodeType(..)) where
 
 import Clash.Prelude
-import qualified Prelude as P
 
-manipulateWire :: Unsigned 8 -> Unsigned 8
-manipulateWire x = (complement x) `shiftL` 2
+data NodeType = ERA | NUM | OPP
+  deriving (Eq, Show, Generic, NFDataX)
 
-someFunc :: P.IO ()
-someFunc = do
-  let inputVal  = 5  :: Unsigned 8
-      outputVal = manipulateWire inputVal
-  
-  P.putStrLn ("Input  Value (Dec): " P.++ P.show inputVal)
-  P.putStrLn ("Output Value (Dec): " P.++ P.show outputVal)
+data Node a = Node { tag :: NodeType, value :: a }
+  deriving (Eq, Show, Generic, NFDataX)
+
 
