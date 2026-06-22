@@ -3,20 +3,20 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module MyLib.Reduce (operate, PinsIn(..), PinsOut(..)) where
+module MyLib.Reduce (operate, ReduceIn(..), ReduceOut(..)) where
 
 import Clash.Prelude
 
 import MyLib (Node(..), NodeType(..))
 
-data PinsIn a = PinsIn
+data ReduceIn a = ReduceIn
   { node1 :: Node a
   , node2 :: Node a
   , aux1  :: Node a
   , aux2  :: Node a
   } deriving (Eq, Show, Generic, NFDataX)
 
-data PinsOut a = PinsOut
+data ReduceOut a = ReduceOut
   { node1 :: Node a
   , node2 :: Node a
   , push  :: Bool
@@ -27,9 +27,9 @@ data PinsOut a = PinsOut
   , ready  :: Bool
   } deriving (Eq, Show, Generic, NFDataX)
 
-operate :: (Num a) => PinsIn a -> PinsOut a
-operate input@(PinsIn{ aux1 = Node{ tag = NUM } }) = 
-  PinsOut
+operate :: (Num a) => ReduceIn a -> ReduceOut a
+operate input@(ReduceIn{ aux1 = Node{ tag = NUM } }) = 
+  ReduceOut
     { node1 = Node { tag = NUM, value = value input.node1 + value input.aux1 }
     , node2 = input.aux2
     , push = True
@@ -41,7 +41,7 @@ operate input@(PinsIn{ aux1 = Node{ tag = NUM } }) =
     }
 
 operate input = 
-  PinsOut
+  ReduceOut
     { node1 = input.aux1
     , node2 = input.node2
     , push = True
