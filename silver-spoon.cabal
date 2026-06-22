@@ -59,7 +59,8 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  MyLib,
-                      MyLib.Reduce
+                      MyLib.Reduce,
+                      MyLib.Buffer
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -125,6 +126,7 @@ test-suite silver-spoon-test
     main-is:          Spec.hs
 
     other-modules:    OperateSpec
+                      StackSpec
 
     -- Test dependencies.
     build-depends:
