@@ -45,6 +45,7 @@ spec = do
                 { payload = Nothing
                 , ready = True
                 }
+            , BufferIn { payload = Nothing, ready = False }
             , BufferIn
                 { payload = Nothing
                 , ready = True
@@ -65,25 +66,27 @@ spec = do
             , errorX("no read this cycle")
             , errorX("no read this cycle")
             , errorX("no read this cycle")
+            , errorX("no read this cycle")
+            , ( Node { tag = NUM, value = 3 }
+              , Node { tag = OPP, value = 5 }
+              )           
             , ( Node { tag = ERA, value = 0 }
               , Node { tag = NUM, value = 2 }
               )
             , ( Node { tag = NUM, value = 1 }
               , Node { tag = OPP, value = 1 }
               ) 
-            , errorX("no read this cycle")
             ]
-          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 8 stack $ P.zip rData inputs 
+          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 9 stack $ P.zip rData inputs 
           wAddr = [fmap fst x | x <- wr]
           wData = [fmap snd x | x <- wr]
-          expectedRAddr :: [Index 4]
-          expectedRAddr = [0, 0, 1, 2, 1, 0, 0, 0]
-          expectedWAddr :: [Maybe (Index 4)]
-          expectedWAddr = [Nothing, Just 0, Just 1, Just 2, Nothing, Nothing, Nothing, Nothing]
+          expectedRAddr :: [Index 5]
+          expectedRAddr = [0, 1, 2, 3, 2, 2, 1, 0, 0]
+          expectedWAddr :: [Maybe (Index 5)]
+          expectedWAddr = [Just 0, Just 1, Just 2, Just 3, Nothing, Nothing, Nothing, Nothing, Nothing]
           expectedWData :: [Maybe (Node Integer, Node Integer)]
           expectedWData =
-            [ Nothing
-            , Just ( Node { tag = NUM, value = 1 }
+            [ Just ( Node { tag = NUM, value = 1 }
                    , Node { tag = OPP, value = 1 }
                    )
             , Just ( Node { tag = ERA, value = 0 }
@@ -92,6 +95,10 @@ spec = do
             , Just ( Node { tag = NUM, value = 3 }
                    , Node { tag = OPP, value = 5 }
                    )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 8 }
+                   )
+            , Nothing
             , Nothing
             , Nothing
             , Nothing
@@ -108,6 +115,7 @@ spec = do
                                  , Node { tag = NUM, value = 8 }
                                  )
                 }
+            , BufferOut { payload = Nothing }
             , BufferOut
                 { payload = Just ( Node { tag = NUM, value = 3 }
                                  , Node { tag = OPP, value = 5 }
@@ -167,12 +175,18 @@ spec = do
           expectedRAddr :: [Index 3]
           expectedRAddr = [0, 0, 0, 0]
           expectedWAddr :: [Maybe (Index 3)]
-          expectedWAddr = [Nothing, Nothing, Nothing, Nothing]
+          expectedWAddr = [Just 0, Just 0, Just 0, Nothing]
           expectedWData :: [Maybe (Node Integer, Node Integer)]
           expectedWData =
-            [ Nothing
-            , Nothing
-            , Nothing
+            [ Just ( Node { tag = NUM, value = 1 }
+                   , Node { tag = OPP, value = 1 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 2 }
+                   )
+            , Just ( Node { tag = NUM, value = 3 }
+                   , Node { tag = OPP, value = 5 }
+                   )
             , Nothing
             ]
           expectedOutputs :: [BufferOut (Node Integer, Node Integer)]
