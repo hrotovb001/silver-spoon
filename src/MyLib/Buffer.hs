@@ -2,12 +2,11 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE TupleSections #-}
 
 module MyLib.Buffer (stack, BufferIn(..), BufferOut(..)) where
 
+import Control.Monad (guard)
 import Clash.Prelude
-import Data.Maybe (isJust)
 
 data BufferIn a = BufferIn
   { payload :: Maybe a
@@ -20,7 +19,6 @@ data BufferOut a = BufferOut
 
 data StackState a b = StackState
   { top :: Maybe a
-  , next :: Maybe a
   , sPtr :: b
   } deriving (Eq, Show, Generic, NFDataX)
 
@@ -28,42 +26,39 @@ stackT :: (SaturatingNum b, Eq b)
        => StackState a b
        -> (a, BufferIn a)
        -> (StackState a b, (b, Maybe (b, a), BufferOut a))
-stackT state (_, input@(BufferIn{ payload = Just _, ready = True })) =
+stackT state (rData, input@(BufferIn{ payload = Just p, ready = True })) =
   ( StackState
       { top = input.payload
-      , next = state.next
       , sPtr = state.sPtr
       }
   , ( state.sPtr
-    , Nothing
-    , BufferOut { payload = state.top }
+    , Just (state.sPtr, p)
+    , BufferOut { payload = state.top <|> (guard (state.sPtr /= 0) >> Just rData) }
     )
   )
-stackT state (_, input@(BufferIn{ payload = Just _, ready = False })) =
+stackT state (_, input@(BufferIn{ payload = Just p, ready = False })) =
   ( StackState
       { top = input.payload
-      , next = state.top
-      , sPtr = if isJust state.top then state.sPtr + 1 else state.sPtr
+      , sPtr = state.sPtr + 1
       }
   , ( state.sPtr
-    , (state.sPtr, ) <$> state.top
+    , Just (state.sPtr, p)
     , BufferOut { payload = Nothing }
     )
   )
 stackT state (rData, BufferIn{ payload = Nothing, ready = True }) =
   ( StackState
-      { top = if isJust state.next then state.next else Just rData
-      , next = Nothing
+      { top = Nothing
       , sPtr = satSub SatZero state.sPtr 1
       }
   , ( satSub SatZero state.sPtr 2
     , Nothing
-    , BufferOut { payload = state.top }
+    , BufferOut { payload = state.top <|> (guard (state.sPtr /= 0) >> Just rData) }
     )
   )
 stackT state (_, BufferIn{ payload = Nothing, ready = False }) =
   ( state
-  , ( state.sPtr
+  , ( satSub SatZero state.sPtr 1
     , Nothing
     , BufferOut { payload = Nothing }
     )
@@ -83,6 +78,5 @@ stack ::
 stack = mealy stackT state
   where state = StackState
                   { top = Nothing
-                  , next = Nothing
                   , sPtr = 0
                   }
