@@ -68,7 +68,7 @@ stack ::
   ( NFDataX a
   , NFDataX b
   , SaturatingNum b
-  , Num b
+  , Enum b
   , Eq b
   , KnownDomain dom
   , HiddenClockResetEnable dom
