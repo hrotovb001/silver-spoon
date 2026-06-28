@@ -61,7 +61,8 @@ library
     exposed-modules:  MyLib,
                       MyLib.Reduce,
                       MyLib.Buffer,
-                      MyLib.Load
+                      MyLib.Load,
+                      MyLib.Store
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -129,6 +130,7 @@ test-suite silver-spoon-test
     other-modules:    OperateSpec
                       StackSpec
                       LoadSpec
+                      StoreSpec
 
     -- Test dependencies.
     build-depends:
