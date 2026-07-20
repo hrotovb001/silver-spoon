@@ -7,7 +7,7 @@ module StackSpec (spec) where
 
 import Test.Hspec
 import Clash.Prelude
-import MyLib.Buffer (stack, BufferIn(..), BufferOut(..))
+import MyLib.Buffer (stack)
 import MyLib (Node(..), NodeType(..))
 import Prelude as P
 
@@ -15,49 +15,37 @@ spec :: Spec
 spec = do
   describe "Stack Buffer Component (No Bounds Check On Push)" $ do
     it "push three items and then pop three items" $ do
-      let inputs :: [BufferIn (Node Integer, Node Integer)]
+      let inputs :: [Maybe (Node Integer, Node Integer)]
           inputs =
-            [ BufferIn
-                { payload = Just ( Node { tag = NUM, value = 1 } 
-                                 , Node { tag = OPP, value = 1 }
-                                 )
-                , ready = False
-                }
-            , BufferIn
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 2 }
-                                 )
-                , ready = False
-                }
-            , BufferIn
-                { payload = Just ( Node { tag = NUM, value = 3 }
-                                 , Node { tag = OPP, value = 5 }
-                                 )
-                , ready = False
-                }
-            , BufferIn
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 8 }
-                                 )
-                , ready = False
-                }
-            , BufferIn
-                { payload = Nothing
-                , ready = True
-                }
-            , BufferIn { payload = Nothing, ready = False }
-            , BufferIn
-                { payload = Nothing
-                , ready = True
-                }
-            , BufferIn
-                { payload = Nothing
-                , ready = True
-                }
-            , BufferIn
-                { payload = Nothing
-                , ready = True
-                }
+            [ Just ( Node { tag = NUM, value = 1 } 
+                   , Node { tag = OPP, value = 1 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 2 }
+                   )
+            , Just ( Node { tag = NUM, value = 3 }
+                   , Node { tag = OPP, value = 5 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 8 }
+                   )
+            , Nothing
+            , Nothing
+            , Nothing
+            , Nothing
+            , Nothing
+            ]
+          ready :: [Bool]
+          ready =
+            [ False
+            , False
+            , False
+            , False
+            , True
+            , False
+            , True
+            , True
+            , True
             ]
           rData :: [(Node Integer, Node Integer)]
           rData =
@@ -77,7 +65,7 @@ spec = do
               , Node { tag = OPP, value = 1 }
               ) 
             ]
-          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 9 stack $ P.zip rData inputs 
+          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 9 stack $ P.zip3 rData inputs ready
           wAddr = [fmap fst x | x <- wr]
           wData = [fmap snd x | x <- wr]
           expectedRAddr :: [Index 5]
@@ -104,63 +92,50 @@ spec = do
             , Nothing
             , Nothing
             ]
-          expectedOutputs :: [BufferOut (Node Integer, Node Integer)]
+          expectedOutputs :: [Maybe (Node Integer, Node Integer)]
           expectedOutputs =
-            [ BufferOut { payload = Nothing }
-            , BufferOut { payload = Nothing }
-            , BufferOut { payload = Nothing }
-            , BufferOut { payload = Nothing }
-            , BufferOut
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 8 }
-                                 )
-                }
-            , BufferOut { payload = Nothing }
-            , BufferOut
-                { payload = Just ( Node { tag = NUM, value = 3 }
-                                 , Node { tag = OPP, value = 5 }
-                                 )
-                }
-            , BufferOut
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 2 }
-                                 )
-                }
-            , BufferOut
-                { payload = Just ( Node { tag = NUM, value = 1 }
-                                 , Node { tag = OPP, value = 1 }
-                                 )
-                }
+            [ Nothing
+            , Nothing
+            , Nothing
+            , Nothing
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 8 }
+                   )
+            , Nothing
+            , Just ( Node { tag = NUM, value = 3 }
+                   , Node { tag = OPP, value = 5 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 2 }
+                   )
+            , Just ( Node { tag = NUM, value = 1 }
+                   , Node { tag = OPP, value = 1 }
+                   )
             ]
       rAddr `shouldBe` expectedRAddr
       wAddr `shouldBe` expectedWAddr
       wData `shouldBe` expectedWData
       outputs `shouldBe` expectedOutputs
     it "writing three items in place" $ do
-      let inputs :: [BufferIn (Node Integer, Node Integer)]
+      let inputs :: [Maybe (Node Integer, Node Integer)]
           inputs =
-            [ BufferIn
-                { payload = Just ( Node { tag = NUM, value = 1 } 
-                                 , Node { tag = OPP, value = 1 }
-                                 )
-                , ready = True
-                }
-            , BufferIn
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 2 }
-                                 )
-                , ready = True
-                }
-            , BufferIn
-                { payload = Just ( Node { tag = NUM, value = 3 }
-                                 , Node { tag = OPP, value = 5 }
-                                 )
-                , ready = True
-                }
-            , BufferIn
-                { payload = Nothing
-                , ready = True
-                }
+            [ Just ( Node { tag = NUM, value = 1 } 
+                   , Node { tag = OPP, value = 1 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 2 }
+                   )
+            , Just ( Node { tag = NUM, value = 3 }
+                   , Node { tag = OPP, value = 5 }
+                   )
+            , Nothing
+            ]
+          ready :: [Bool]
+          ready =
+            [ True
+            , True
+            , True
+            , True
             ]
           rData :: [(Node Integer, Node Integer)]
           rData =
@@ -169,7 +144,7 @@ spec = do
             , errorX("no read this cycle")
             , errorX("no read this cycle")
             ]
-          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 4 stack $ P.zip rData inputs 
+          (rAddr, wr, outputs) = P.unzip3 $ simulateN @System 4 stack $ P.zip3 rData inputs ready
           wAddr = [fmap fst x | x <- wr]
           wData = [fmap snd x | x <- wr]
           expectedRAddr :: [Index 3]
@@ -189,24 +164,18 @@ spec = do
                    )
             , Nothing
             ]
-          expectedOutputs :: [BufferOut (Node Integer, Node Integer)]
+          expectedOutputs :: [Maybe (Node Integer, Node Integer)]
           expectedOutputs =
-            [ BufferOut { payload = Nothing }
-            , BufferOut
-                { payload = Just ( Node { tag = NUM, value = 1 }
-                                 , Node { tag = OPP, value = 1 }
-                                 )
-                }
-            , BufferOut
-                { payload = Just ( Node { tag = ERA, value = 0 }
-                                 , Node { tag = NUM, value = 2 }
-                                 )
-                }
-            , BufferOut
-                { payload = Just ( Node { tag = NUM, value = 3 }
-                                 , Node { tag = OPP, value = 5 }
-                                 )
-                }
+            [ Nothing
+            , Just ( Node { tag = NUM, value = 1 }
+                   , Node { tag = OPP, value = 1 }
+                   )
+            , Just ( Node { tag = ERA, value = 0 }
+                   , Node { tag = NUM, value = 2 }
+                   )
+            , Just ( Node { tag = NUM, value = 3 }
+                   , Node { tag = OPP, value = 5 }
+                   )
             ]
       rAddr `shouldBe` expectedRAddr
       wAddr `shouldBe` expectedWAddr
