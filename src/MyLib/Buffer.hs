@@ -3,19 +3,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module MyLib.Buffer (stack, BufferIn(..), BufferOut(..)) where
+module MyLib.Buffer (stack) where
 
 import Control.Monad (guard)
 import Clash.Prelude
-
-data BufferIn a = BufferIn
-  { payload :: Maybe a
-  , ready :: Bool
-  } deriving (Eq, Show, Generic, NFDataX)
-
-data BufferOut a = BufferOut
-  { payload :: Maybe a
-  } deriving (Eq, Show, Generic, NFDataX)
 
 data StackState a b = StackState
   { top :: Maybe a
@@ -24,43 +15,43 @@ data StackState a b = StackState
 
 stackT :: (SaturatingNum b, Eq b)
        => StackState a b
-       -> (a, BufferIn a)
-       -> (StackState a b, (b, Maybe (b, a), BufferOut a))
-stackT state (rData, input@(BufferIn{ payload = Just p, ready = True })) =
+       -> (a, Maybe a, Bool)
+       -> (StackState a b, (b, Maybe (b, a), Maybe a))
+stackT state (rData, Just p, True) =
   ( StackState
-      { top = input.payload
+      { top = Just p
       , sPtr = state.sPtr
       }
   , ( state.sPtr
     , Just (state.sPtr, p)
-    , BufferOut { payload = state.top <|> (guard (state.sPtr /= 0) >> Just rData) }
+    , state.top <|> (guard (state.sPtr /= 0) >> Just rData)
     )
   )
-stackT state (_, input@(BufferIn{ payload = Just p, ready = False })) =
+stackT state (_, Just p, False) =
   ( StackState
-      { top = input.payload
+      { top = Just p
       , sPtr = state.sPtr + 1
       }
   , ( state.sPtr
     , Just (state.sPtr, p)
-    , BufferOut { payload = Nothing }
+    , Nothing
     )
   )
-stackT state (rData, BufferIn{ payload = Nothing, ready = True }) =
+stackT state (rData, Nothing, True) =
   ( StackState
       { top = Nothing
       , sPtr = satSub SatZero state.sPtr 1
       }
   , ( satSub SatZero state.sPtr 2
     , Nothing
-    , BufferOut { payload = state.top <|> (guard (state.sPtr /= 0) >> Just rData) }
+    , state.top <|> (guard (state.sPtr /= 0) >> Just rData)
     )
   )
-stackT state (_, BufferIn{ payload = Nothing, ready = False }) =
+stackT state (_, Nothing, False) =
   ( state
   , ( satSub SatZero state.sPtr 1
     , Nothing
-    , BufferOut { payload = Nothing }
+    , Nothing
     )
   )
 
@@ -73,8 +64,8 @@ stack ::
   , KnownDomain dom
   , HiddenClockResetEnable dom
   )
-  => Signal dom (a, BufferIn a)
-  -> Signal dom (b, Maybe (b, a), BufferOut a)
+  => Signal dom (a, Maybe a, Bool)
+  -> Signal dom (b, Maybe (b, a), Maybe a)
 stack = mealy stackT state
   where state = StackState
                   { top = Nothing
